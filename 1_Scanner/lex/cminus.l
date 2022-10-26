@@ -53,16 +53,16 @@ whitespace  [ \t]+
 {whitespace}    {/* skip whitespace */}
 "/*"            { char c;
                   int flag = FALSE;
-                  do
+                  while (1)
                   { c = input();
                     if (flag){
                       if (c == '/') break;
                       else flag = FALSE;
                     }
-                    if (c == EOF) break;
+                    if (c == 0) break;
                     if (c == '\n') lineno++;
                     if (c == '*') flag = TRUE;
-                  } while (c != '}');
+                  } 
                 }
 .               {return ERROR;}
 

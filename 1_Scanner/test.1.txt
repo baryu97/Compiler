@@ -1,8 +1,12 @@
-/* A program to perform Euclid's
-   Algorithm to computer gcd */
+/* A program 0t'\0'o perform Euclid's
+   Algorithm to co}mputer gcd */
 
 int gcd (int u, int v)
 {
+	int elsex;
+	int EOF = 4;
+	if(v==0) v=1;
+	elsex=3/*haha*asfa . / dsasf/sa? */;
 	if (v == 0) return u;
 	else return gcd(v,u-u/v*v);
 	/* u-u/v*v == u mod v */
@@ -14,3 +18,8 @@ void main(void)
 	x = input(); y = input();
 	output(gcd(x,y));
 }
+
+/*  
+aodkmgakmgla
+lsdkmlgs
+lkmslkmd*/
