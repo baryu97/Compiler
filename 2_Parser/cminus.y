@@ -32,8 +32,15 @@ program     : decl_list
             ;
 decl_list   : decl_list decl 
               { 
-                $$ = $1;
-                $$->sibling = $2;
+                YYSTYPE t = $1;
+                if (t != NULL)
+                { 
+                  while (t->sibling != NULL)
+                    t = t->sibling;
+                  t->sibling = $2;
+                  $$ = $1; 
+                }
+                else $$ = $2;
               }
             | decl { $$ = $1; }
             ;
@@ -42,26 +49,39 @@ decl        : var_decl { $$ = $1; }
             ;
 var_decl    : type_spec ID SEMI
               {
-                $$ = newDeclNode(VarK);
-                $$->attr.name = copyString(tokenString);
-                /* type 어케 출력? */
+                $$ = $1;
+                /* $$->attr.name = copyString(tokenString); */
+                $$->attr.name = "haha";
               }
-            | type_spec ID LBRACE NUM RBRACE SEMI
+            | type_spec ID LBRACE num RBRACE SEMI
               {
-                $$ = newDeclNode(VarK);
+                $$ = $1;
                 $$->attr.name = copyString(tokenString);
                 $$->child[0] = $4;
-
+              }
+            ;
+num         : NUM 
+              {
+                $$ = newExpNode(ConstK);
+                $$->attr.val = atoi(tokenString);
               }
             ;
 type_spec   : INT
+              {
+                $$ = newDeclNode(VarK);
+                $$->type = Integer;
+              }
             | VOID
+              {
+                $$ = newDeclNode(VarK);
+                $$->type = Void;
+              }
             ;
 fun_decl    : type_spec ID LPAREN params RPAREN comp_stmt
               {
-                $$ = newDeclNode(Funck);
-                $$->type = $1;
-                $$->name = copyString(tokenString);
+                $$ = newDeclNode(FuncK);
+                $$->type = $1->type;
+                $$->attr.name = copyString(tokenString);
                 $$->child[0] = $4;
                 $$->child[1] = $6;
               }
@@ -69,15 +89,29 @@ fun_decl    : type_spec ID LPAREN params RPAREN comp_stmt
 params      : param_list 
             | VOID          
             ;
+param_list  : param_list COMMA param
+              { 
+                YYSTYPE t = $1;
+                if (t != NULL)
+                { 
+                  while (t->sibling != NULL)
+                    t = t->sibling;
+                  t->sibling = $3;
+                  $$ = $1; 
+                }
+                else $$ = $3;
+              }
+            | param
+            ;
 param       : type_spec ID 
               {
-                $$->type = $1;
-                $$->name = copyString(tokenString);
+                $$->type = $1->type;
+                $$->attr.name = copyString(tokenString);
               }
             | type_spec ID LBRACE RBRACE
               {
-                $$->type = $1; /* type 어케함? */
-                $$->name = copyString(tokenString);
+                $$->type = $1->type; /* type 어케함? */
+                $$->attr.name = copyString(tokenString);
               }
             ;            
 comp_stmt   : LCURLY local_decls stmt_list RCURLY
@@ -86,20 +120,34 @@ comp_stmt   : LCURLY local_decls stmt_list RCURLY
                 $$->child[1] = $3;
               }
             ;
-local_decls : local_decls var_decls
-              {
-                $$ = $1;
-                $$->sibling = $2;
+local_decls : local_decls var_decl
+              { 
+                YYSTYPE t = $1;
+                if (t != NULL)
+                { 
+                  while (t->sibling != NULL)
+                    t = t->sibling;
+                  t->sibling = $2;
+                  $$ = $1; 
+                }
+                else $$ = $2;
               }
-            | empty
+            | /* empty */
               {
                 $$ = NULL;
               }
             ;
 stmt_list   : stmt_list stmt
-              {
-                $$ = $1;
-                $$->sibling = $2;
+              { 
+                YYSTYPE t = $1;
+                if (t != NULL)
+                { 
+                  while (t->sibling != NULL)
+                    t = t->sibling;
+                  t->sibling = $2;
+                  $$ = $1; 
+                }
+                else $$ = $2;
               }
             | stmt
             ;
@@ -112,35 +160,35 @@ stmt        : exp_stmt
 exp_stmt    : exp SEMI { $$ = $1; }
             | SEMI { $$ = NULL; }
             ;
-selec_stmt  : IF LPAREN exp RPAREN stmt else stmt
+selec_stmt  : IF LPAREN exp RPAREN stmt ELSE stmt
               {
-                $$ = newStmtNode(If_Elsek);
+                $$ = newStmtNode(If_ElseK);
                 $$->child[0] = $3;
                 $$->child[1] = $5;
                 $$->child[2] = $7;
               }
             | IF LPAREN exp RPAREN stmt
               {
-                $$ = newStmtNode(Ifk);
+                $$ = newStmtNode(IfK);
                 $$->child[0] = $3;
-                $$->child[1] = $5
+                $$->child[1] = $5;
               }
             ;
 iter_stmt   : WHILE LPAREN exp RPAREN stmt
               {
-                $$ = newStmtNode(Whilek);
+                $$ = newStmtNode(WhileK);
                 $$->child[0] = $3;
                 $$->child[1] = $5;
               }
             ;
 ret_stmt    : RETURN SEMI
               {
-                $$ = newStmtNode(Returnk);
+                $$ = newStmtNode(ReturnK);
                 $$->type = Void;
               }
             | RETURN exp SEMI 
               {
-                $$ = newStmtNode(Returnk);
+                $$ = newStmtNode(ReturnK);
                 $$->child[0] = $2;
                 $$->type = $$->child[0]->type;
               }
@@ -175,8 +223,8 @@ simple_exp  : add_exp relop add_exp
             | add_exp
             ; 
 relop       : LE
-            | L
-            | G
+            | LT
+            | GT
             | GE
             | EQ
             | NE
@@ -211,11 +259,7 @@ factor      : LPAREN exp RPAREN
               }
             | var
             | call
-            | NUM 
-              {
-                $$ = newExpNode(ConstK);
-                $$->attr.val = atoi(tokenString);
-              }
+            | num
             ;
 call        : ID LPAREN args RPAREN
               {
@@ -225,78 +269,22 @@ call        : ID LPAREN args RPAREN
               }
             ;
 args        : arg_list 
-            | empty { $$ = NULL; }
+            | /* empty */ { $$ = NULL; }
             ;
 arg_list    : arg_list COMMA exp 
-              {
-                $$ = $1;
-                $$->sibling = $3;
+              { 
+                YYSTYPE t = $1;
+                if (t != NULL)
+                { 
+                  while (t->sibling != NULL)
+                    t = t->sibling;
+                  t->sibling = $3;
+                  $$ = $1; 
+                }
+                else $$ = $3;
               }
             | exp
             ;
-            /*
-stmt        : if_stmt { $$ = $1; }
-            | repeat_stmt { $$ = $1; }
-            | assign_stmt { $$ = $1; }
-            | read_stmt { $$ = $1; }
-            | write_stmt { $$ = $1; }
-            | error  { $$ = NULL; }
-            ;
-exp         : simple_exp LT simple_exp 
-                 { $$ = newExpNode(OpK);
-                   $$->child[0] = $1;
-                   $$->child[1] = $3;
-                   $$->attr.op = LT;
-                 }
-            | simple_exp EQ simple_exp
-                 { $$ = newExpNode(OpK);
-                   $$->child[0] = $1;
-                   $$->child[1] = $3;
-                   $$->attr.op = EQ;
-                 }
-            | simple_exp { $$ = $1; }
-            ;
-simple_exp  : simple_exp PLUS term 
-                 { $$ = newExpNode(OpK);
-                   $$->child[0] = $1;
-                   $$->child[1] = $3;
-                   $$->attr.op = PLUS;
-                 }
-            | simple_exp MINUS term
-                 { $$ = newExpNode(OpK);
-                   $$->child[0] = $1;
-                   $$->child[1] = $3;
-                   $$->attr.op = MINUS;
-                 } 
-            | term { $$ = $1; }
-            ;
-term        : term TIMES factor 
-                 { $$ = newExpNode(OpK);
-                   $$->child[0] = $1;
-                   $$->child[1] = $3;
-                   $$->attr.op = TIMES;
-                 }
-            | term OVER factor
-                 { $$ = newExpNode(OpK);
-                   $$->child[0] = $1;
-                   $$->child[1] = $3;
-                   $$->attr.op = OVER;
-                 }
-            | factor { $$ = $1; }
-            ;
-factor      : LPAREN exp RPAREN
-                 { $$ = $2; }
-            | NUM
-                 { $$ = newExpNode(ConstK);
-                   $$->attr.val = atoi(tokenString);
-                 }
-            | ID { $$ = newExpNode(IdK);
-                   $$->attr.name =
-                         copyString(tokenString);
-                 }
-            | error { $$ = NULL; }
-            ;
-            */
 
 
 %%
