@@ -100,7 +100,7 @@ TreeNode * newExpNode(ExpKind kind)
 /* Function newDeclNode creates a new declaration 
  * node for syntax tree construction
  */
-TreeNode * newDeclNode(ExpKind kind)
+TreeNode * newDeclNode(DeclKind kind)
 { TreeNode * t = (TreeNode *) malloc(sizeof(TreeNode));
   int i;
   if (t==NULL)
@@ -114,6 +114,26 @@ TreeNode * newDeclNode(ExpKind kind)
     t->type = Void;
   }
   return t;
+}
+
+void printType(ExpType type){
+  switch (type)
+  {
+  case Integer:
+    fprintf(listing,"int\n");
+    break;
+  case IntArr:
+    fprintf(listing,"int[]\n");
+    break;
+  case Void:
+    fprintf(listing,"void\n");
+    break;
+  case VoidArr:
+    fprintf(listing,"void[]\n");
+    break;
+  default:
+    break;
+  }
 }
 
 /* Function copyString allocates and makes a new
@@ -158,16 +178,19 @@ void printTree( TreeNode * tree )
     if (tree->nodekind==DeclK)
     { switch (tree->kind.decl) {
         case VarK:
-          fprintf(listing,"Variable Declaration: name = %s, type = %s\n", tree->attr.name, tree->type);
+          fprintf(listing,"Variable Declaration: name = %s, type = ", tree->attr.name);
+          printType(tree->type);
           break;
         case FuncK:
-          fprintf(listing,"Function Declaration: name = %s, return type = %s\n", tree->attr.name, tree->type);
+          fprintf(listing,"Function Declaration: name = %s, return type = ", tree->attr.name);
+          printType(tree->type);
           break;
         case ParaK:
         if (tree->type == Void) {
           fprintf(listing,"Void Parameter\n");
         } else {
-          fprintf(listing,"Parameter: name = %s, type = %s\n", tree->attr.name, tree->type);
+          fprintf(listing,"Parameter: name = %s, type = ", tree->attr.name);
+          printType(tree->type);
         }
         break;
         default:

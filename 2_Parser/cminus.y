@@ -24,6 +24,7 @@ static int yylex(void); // added 11/2/11 to ensure no conflict with lex
 %token ID NUM 
 %token ASSIGN EQ NE LT LE GT GE PLUS MINUS TIMES OVER LPAREN RPAREN LBRACE RBRACE LCURLY RCURLY SEMI COMMA
 %token ERROR 
+%precedence LBRACE
 
 %% /* Grammar for TINY */
 
@@ -47,16 +48,28 @@ decl_list   : decl_list decl
 decl        : var_decl { $$ = $1; }
             | fun_decl { $$ = $1; }
             ;
-var_decl    : type_spec ID SEMI
+var_decl    : type_spec id SEMI
               {
-                $$ = $1;
-                /* $$->attr.name = copyString(tokenString); */
-                $$->attr.name = "haha";
+                $$ = newDeclNode(VarK);
+                $$->type = $1->type;
+                free($1);
+                $$->attr.name = $2->attr.name;
+                free($2);
               }
-            | type_spec ID LBRACE num RBRACE SEMI
+            | INT id LBRACE num RBRACE SEMI
               {
-                $$ = $1;
-                $$->attr.name = copyString(tokenString);
+                $$ = newDeclNode(VarK);
+                $$->type = IntArr;
+                $$->attr.name = $2->attr.name;
+                free($2);
+                $$->child[0] = $4;
+              }
+            | VOID id LBRACE num RBRACE SEMI
+              {
+                $$ = newDeclNode(VarK);
+                $$->type = VoidArr;
+                $$->attr.name = $2->attr.name;
+                free($2);
                 $$->child[0] = $4;
               }
             ;
@@ -64,6 +77,13 @@ num         : NUM
               {
                 $$ = newExpNode(ConstK);
                 $$->attr.val = atoi(tokenString);
+              }
+            ;
+id          : ID
+              { 
+                $$ = newDeclNode(VarK);
+                savedName = copyString(tokenString);
+                $$->attr.name = savedName;
               }
             ;
 type_spec   : INT
@@ -77,17 +97,22 @@ type_spec   : INT
                 $$->type = Void;
               }
             ;
-fun_decl    : type_spec ID LPAREN params RPAREN comp_stmt
+fun_decl    : type_spec id LPAREN params RPAREN comp_stmt
               {
                 $$ = newDeclNode(FuncK);
                 $$->type = $1->type;
-                $$->attr.name = copyString(tokenString);
+                free($1);
+                $$->attr.name = $2->attr.name;
                 $$->child[0] = $4;
                 $$->child[1] = $6;
               }
             ;
 params      : param_list 
-            | VOID          
+            | VOID 
+              {
+                $$ = newDeclNode(ParaK);
+                $$->type = Void;
+              }         
             ;
 param_list  : param_list COMMA param
               { 
@@ -103,19 +128,32 @@ param_list  : param_list COMMA param
               }
             | param
             ;
-param       : type_spec ID 
+param       : type_spec id 
               {
+                $$ = newDeclNode(ParaK);
                 $$->type = $1->type;
-                $$->attr.name = copyString(tokenString);
+                free($1);
+                $$->attr.name = $2->attr.name;
+                free($2);
               }
-            | type_spec ID LBRACE RBRACE
+            | INT id LBRACE RBRACE
               {
-                $$->type = $1->type; /* type 어케함? */
-                $$->attr.name = copyString(tokenString);
+                $$ = newDeclNode(ParaK);
+                $$->type = IntArr;
+                $$->attr.name = $2->attr.name;
+                free($2);
+              }
+            | VOID id LBRACE RBRACE
+              {
+                $$ = newDeclNode(ParaK);
+                $$->type = VoidArr;
+                $$->attr.name = $2->attr.name;
+                free($2);
               }
             ;            
 comp_stmt   : LCURLY local_decls stmt_list RCURLY
               {
+                $$ = newStmtNode(CompK);
                 $$->child[0] = $2;
                 $$->child[1] = $3;
               }
@@ -190,7 +228,7 @@ ret_stmt    : RETURN SEMI
               {
                 $$ = newStmtNode(ReturnK);
                 $$->child[0] = $2;
-                $$->type = $$->child[0]->type;
+                $$->type = Integer;
               }
             ;
 exp         : var ASSIGN exp
@@ -201,27 +239,65 @@ exp         : var ASSIGN exp
               }
             | simple_exp
             ;
-var         : ID 
+var         : id 
               { 
                 $$ = newExpNode(VarAccK);
-                $$->attr.name = copyString(tokenString); 
+                $$->attr.name = $1->attr.name;
+                free($1);
               }
-            | ID LBRACE exp RBRACE
+            | id LBRACE exp RBRACE
               {
                 $$ = newExpNode(VarAccK);
-                $$->attr.name = copyString(tokenString);
+                $$->attr.name = $1->attr.name;
+                free($1);
                 $$->child[0] = $3;
               }
             ;
-simple_exp  : add_exp relop add_exp
+simple_exp  : add_exp LT add_exp
               {
                 $$ = newExpNode(BiOpK);
                 $$->child[0] = $1;
                 $$->child[1] = $3;
-                $$->attr.op = $2;
+                $$->attr.op = LT;
+              }
+            | add_exp LE add_exp
+              {
+                $$ = newExpNode(BiOpK);
+                $$->child[0] = $1;
+                $$->child[1] = $3;
+                $$->attr.op = LE;
+              }
+            | add_exp GT add_exp
+              {
+                $$ = newExpNode(BiOpK);
+                $$->child[0] = $1;
+                $$->child[1] = $3;
+                $$->attr.op = GT;
+              }
+            | add_exp GE add_exp
+              {
+                $$ = newExpNode(BiOpK);
+                $$->child[0] = $1;
+                $$->child[1] = $3;
+                $$->attr.op = GE;
+              }
+            | add_exp EQ add_exp
+              {
+                $$ = newExpNode(BiOpK);
+                $$->child[0] = $1;
+                $$->child[1] = $3;
+                $$->attr.op = EQ;
+              }
+            | add_exp NE add_exp
+              {
+                $$ = newExpNode(BiOpK);
+                $$->child[0] = $1;
+                $$->child[1] = $3;
+                $$->attr.op = NE;
               }
             | add_exp
             ; 
+/*
 relop       : LE
             | LT
             | GT
@@ -229,30 +305,49 @@ relop       : LE
             | EQ
             | NE
             ;
-add_exp     : add_exp addop term 
+*/
+add_exp     : add_exp PLUS term 
               {
                 $$ = newExpNode(BiOpK);
                 $$->child[0] = $1;
                 $$->child[1] = $3;
-                $$->attr.op = $2; 
+                $$->attr.op = PLUS; 
+              }
+            | add_exp MINUS term 
+              {
+                $$ = newExpNode(BiOpK);
+                $$->child[0] = $1;
+                $$->child[1] = $3;
+                $$->attr.op = MINUS; 
               }
             | term
             ;
+/*
 addop       : PLUS
             | MINUS
             ;
-term        : term mulop factor 
+*/
+term        : term TIMES factor 
               {
                 $$ = newExpNode(BiOpK);
                 $$->child[0] = $1;
                 $$->child[1] = $3;
-                $$->attr.op = $2; 
+                $$->attr.op = TIMES; 
+              }
+            | term OVER factor 
+              {
+                $$ = newExpNode(BiOpK);
+                $$->child[0] = $1;
+                $$->child[1] = $3;
+                $$->attr.op = OVER; 
               }
             | factor
             ;
+/* 
 mulop       : TIMES
             | OVER
             ;
+            */
 factor      : LPAREN exp RPAREN
               {
                 $$ = $2;
@@ -261,11 +356,12 @@ factor      : LPAREN exp RPAREN
             | call
             | num
             ;
-call        : ID LPAREN args RPAREN
+call        : id LPAREN args RPAREN
               {
                 $$ = newExpNode(CallK);
                 $$->child[0] = $3;
-                $$->attr.name = copyString(tokenString);
+                $$->attr.name = $1->attr.name;
+                free($1);
               }
             ;
 args        : arg_list 
