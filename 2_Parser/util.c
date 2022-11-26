@@ -186,7 +186,7 @@ void printTree( TreeNode * tree )
           printType(tree->type);
           break;
         case ParaK:
-        if (tree->type == Void) {
+        if (tree->attr.name == NULL) {
           fprintf(listing,"Void Parameter\n");
         } else {
           fprintf(listing,"Parameter: name = %s, type = ", tree->attr.name);

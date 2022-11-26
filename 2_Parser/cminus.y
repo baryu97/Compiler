@@ -25,6 +25,10 @@ static int yylex(void); // added 11/2/11 to ensure no conflict with lex
 %token ASSIGN EQ NE LT LE GT GE PLUS MINUS TIMES OVER LPAREN RPAREN LBRACE RBRACE LCURLY RCURLY SEMI COMMA
 %token ERROR 
 
+%left LPAREN RPAREN 
+%left ELSE 
+
+
 %% /* Grammar for TINY */
 
 program     : decl_list
@@ -47,15 +51,21 @@ decl_list   : decl_list decl
 decl        : var_decl { $$ = $1; }
             | fun_decl { $$ = $1; }
             ;
-var_decl    : type_spec id SEMI 
+var_decl    : INT id SEMI 
               {
                 $$ = newDeclNode(VarK);
-                $$->type = $1->type;
-                free($1);
+                $$->type = Integer;
                 $$->attr.name = $2->attr.name;
                 free($2);
               }
-            | INT id LBRACE num RBRACE SEMI %prec LBRACE
+            | VOID id SEMI 
+              {
+                $$ = newDeclNode(VarK);
+                $$->type = Void;
+                $$->attr.name = $2->attr.name;
+                free($2);
+              }
+            | INT id LBRACE num RBRACE SEMI 
               {
                 $$ = newDeclNode(VarK);
                 $$->type = IntArr;
@@ -63,7 +73,7 @@ var_decl    : type_spec id SEMI
                 free($2);
                 $$->child[0] = $4;
               }
-            | VOID id LBRACE num RBRACE SEMI %prec LBRACE
+            | VOID id LBRACE num RBRACE SEMI 
               {
                 $$ = newDeclNode(VarK);
                 $$->type = VoidArr;
@@ -85,32 +95,29 @@ id          : ID
                 $$->attr.name = savedName;
               }
             ;
-type_spec   : INT
-              {
-                $$ = newDeclNode(VarK);
-                $$->type = Integer;
-              }
-            | VOID
-              {
-                $$ = newDeclNode(VarK);
-                $$->type = Void;
-              }
-            ;
-fun_decl    : type_spec id LPAREN params RPAREN comp_stmt
+fun_decl    : INT id LPAREN params RPAREN comp_stmt
               {
                 $$ = newDeclNode(FuncK);
-                $$->type = $1->type;
-                free($1);
+                $$->type = Integer;
+                $$->attr.name = $2->attr.name;
+                $$->child[0] = $4;
+                $$->child[1] = $6;
+              }
+            | VOID id LPAREN params RPAREN comp_stmt
+              {
+                $$ = newDeclNode(FuncK);
+                $$->type = Void;
                 $$->attr.name = $2->attr.name;
                 $$->child[0] = $4;
                 $$->child[1] = $6;
               }
             ;
 params      : param_list 
-            | VOID 
+            | VOID %prec VOID
               {
                 $$ = newDeclNode(ParaK);
                 $$->type = Void;
+                $$->attr.name = NULL;
               }         
             ;
 param_list  : param_list COMMA param
@@ -127,11 +134,17 @@ param_list  : param_list COMMA param
               }
             | param
             ;
-param       : type_spec id 
+param       : INT id 
               {
                 $$ = newDeclNode(ParaK);
-                $$->type = $1->type;
-                free($1);
+                $$->type = Integer;
+                $$->attr.name = $2->attr.name;
+                free($2);
+              }
+            | VOID id 
+              {
+                $$ = newDeclNode(ParaK);
+                $$->type = Void;
                 $$->attr.name = $2->attr.name;
                 free($2);
               }
@@ -186,7 +199,8 @@ stmt_list   : stmt_list stmt
                 }
                 else $$ = $2;
               }
-            | stmt
+            | /* empty */
+              { $$ = NULL; }
             ;
 stmt        : exp_stmt
             | comp_stmt
@@ -197,8 +211,7 @@ stmt        : exp_stmt
 exp_stmt    : exp SEMI { $$ = $1; }
             | SEMI { $$ = NULL; }
             ;
-selec_stmt  : %prec ELSE
-              IF LPAREN exp RPAREN stmt ELSE stmt 
+selec_stmt  : IF LPAREN exp RPAREN stmt ELSE stmt 
               {
                 $$ = newStmtNode(If_ElseK);
                 $$->child[0] = $3;

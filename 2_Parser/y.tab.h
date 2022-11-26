@@ -54,9 +54,9 @@ extern int yydebug;
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
-    IF = 258,                      /* IF  */
-    THEN = 259,                    /* THEN  */
-    ELSE = 260,                    /* ELSE  */
+    ELSE = 258,                    /* ELSE  */
+    IF = 259,                      /* IF  */
+    THEN = 260,                    /* THEN  */
     WHILE = 261,                   /* WHILE  */
     RETURN = 262,                  /* RETURN  */
     INT = 263,                     /* INT  */
@@ -91,9 +91,9 @@ extern int yydebug;
 #define YYEOF 0
 #define YYerror 256
 #define YYUNDEF 257
-#define IF 258
-#define THEN 259
-#define ELSE 260
+#define ELSE 258
+#define IF 259
+#define THEN 260
 #define WHILE 261
 #define RETURN 262
 #define INT 263
