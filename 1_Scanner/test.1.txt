@@ -5,7 +5,7 @@ int gcd (int u, int v)
 {
 	int elsex;
 	int EOF = 4;
-	if(v==0) v=1;
+	if(v==0) v~1;
 	elsex=3/*haha*asfa . / dsasf/sa? */;
 	if (v == 0) return u;
 	else return gcd(v,u-u/v*v);
