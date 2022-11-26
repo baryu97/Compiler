@@ -20,11 +20,10 @@ static int yylex(void); // added 11/2/11 to ensure no conflict with lex
 
 %}
 
-%token IF THEN ELSE WHILE RETURN INT VOID 
+%token ELSE IF THEN WHILE RETURN INT VOID 
 %token ID NUM 
 %token ASSIGN EQ NE LT LE GT GE PLUS MINUS TIMES OVER LPAREN RPAREN LBRACE RBRACE LCURLY RCURLY SEMI COMMA
 %token ERROR 
-%precedence LBRACE
 
 %% /* Grammar for TINY */
 
@@ -48,7 +47,7 @@ decl_list   : decl_list decl
 decl        : var_decl { $$ = $1; }
             | fun_decl { $$ = $1; }
             ;
-var_decl    : type_spec id SEMI
+var_decl    : type_spec id SEMI 
               {
                 $$ = newDeclNode(VarK);
                 $$->type = $1->type;
@@ -56,18 +55,11 @@ var_decl    : type_spec id SEMI
                 $$->attr.name = $2->attr.name;
                 free($2);
               }
-            | INT id LBRACE num RBRACE SEMI
+            | arr_spec id LBRACE num RBRACE SEMI
               {
                 $$ = newDeclNode(VarK);
-                $$->type = IntArr;
-                $$->attr.name = $2->attr.name;
-                free($2);
-                $$->child[0] = $4;
-              }
-            | VOID id LBRACE num RBRACE SEMI
-              {
-                $$ = newDeclNode(VarK);
-                $$->type = VoidArr;
+                $$->type = $1->type;
+                free($1);
                 $$->attr.name = $2->attr.name;
                 free($2);
                 $$->child[0] = $4;
@@ -95,6 +87,17 @@ type_spec   : INT
               {
                 $$ = newDeclNode(VarK);
                 $$->type = Void;
+              }
+            ;
+arr_spec    : INT
+              {
+                $$ = newDeclNode(VarK);
+                $$->type = IntArr;
+              }
+            | VOID
+              {
+                $$ = newDeclNode(VarK);
+                $$->type = VoidArr;
               }
             ;
 fun_decl    : type_spec id LPAREN params RPAREN comp_stmt
@@ -136,17 +139,11 @@ param       : type_spec id
                 $$->attr.name = $2->attr.name;
                 free($2);
               }
-            | INT id LBRACE RBRACE
+            | arr_spec id LBRACE RBRACE
               {
                 $$ = newDeclNode(ParaK);
-                $$->type = IntArr;
-                $$->attr.name = $2->attr.name;
-                free($2);
-              }
-            | VOID id LBRACE RBRACE
-              {
-                $$ = newDeclNode(ParaK);
-                $$->type = VoidArr;
+                $$->type = $1->type;
+                free($1);
                 $$->attr.name = $2->attr.name;
                 free($2);
               }
@@ -198,14 +195,15 @@ stmt        : exp_stmt
 exp_stmt    : exp SEMI { $$ = $1; }
             | SEMI { $$ = NULL; }
             ;
-selec_stmt  : IF LPAREN exp RPAREN stmt ELSE stmt
+selec_stmt  : %prec ELSE
+              IF LPAREN exp RPAREN stmt ELSE stmt 
               {
                 $$ = newStmtNode(If_ElseK);
                 $$->child[0] = $3;
                 $$->child[1] = $5;
                 $$->child[2] = $7;
               }
-            | IF LPAREN exp RPAREN stmt
+            | IF LPAREN exp RPAREN stmt 
               {
                 $$ = newStmtNode(IfK);
                 $$->child[0] = $3;
