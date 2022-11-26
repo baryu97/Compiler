@@ -55,11 +55,18 @@ var_decl    : type_spec id SEMI
                 $$->attr.name = $2->attr.name;
                 free($2);
               }
-            | arr_spec id LBRACE num RBRACE SEMI
+            | INT id LBRACE num RBRACE SEMI %prec LBRACE
               {
                 $$ = newDeclNode(VarK);
-                $$->type = $1->type;
-                free($1);
+                $$->type = IntArr;
+                $$->attr.name = $2->attr.name;
+                free($2);
+                $$->child[0] = $4;
+              }
+            | VOID id LBRACE num RBRACE SEMI %prec LBRACE
+              {
+                $$ = newDeclNode(VarK);
+                $$->type = VoidArr;
                 $$->attr.name = $2->attr.name;
                 free($2);
                 $$->child[0] = $4;
@@ -87,17 +94,6 @@ type_spec   : INT
               {
                 $$ = newDeclNode(VarK);
                 $$->type = Void;
-              }
-            ;
-arr_spec    : INT
-              {
-                $$ = newDeclNode(VarK);
-                $$->type = IntArr;
-              }
-            | VOID
-              {
-                $$ = newDeclNode(VarK);
-                $$->type = VoidArr;
               }
             ;
 fun_decl    : type_spec id LPAREN params RPAREN comp_stmt
@@ -139,11 +135,17 @@ param       : type_spec id
                 $$->attr.name = $2->attr.name;
                 free($2);
               }
-            | arr_spec id LBRACE RBRACE
+            | INT id LBRACE RBRACE
               {
                 $$ = newDeclNode(ParaK);
-                $$->type = $1->type;
-                free($1);
+                $$->type = IntArr;
+                $$->attr.name = $2->attr.name;
+                free($2);
+              }
+            | VOID id LBRACE RBRACE
+              {
+                $$ = newDeclNode(ParaK);
+                $$->type = VoidArr;
                 $$->attr.name = $2->attr.name;
                 free($2);
               }
