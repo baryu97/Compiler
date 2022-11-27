@@ -29,7 +29,7 @@ static int yylex(void); // added 11/2/11 to ensure no conflict with lex
 %left ELSE 
 
 
-%% /* Grammar for TINY */
+%% /* Grammar for cminus */
 
 program     : decl_list
                  { savedTree = $1;} 
@@ -403,6 +403,7 @@ int yyerror(char * message)
   fprintf(listing,"Current token: ");
   printToken(yychar,tokenString);
   Error = TRUE;
+  savedTree = NULL;
   return 0;
 }
 
