@@ -163,16 +163,30 @@ static void insertNode( TreeNode * t)
       {
       case VarK:
         if (st_lookup_excluding_parent(cur_scope,t->attr.name) != NULL){
-          fprintf(listing, "Error: redeclared variable \"%s\" is called at line %d\n", t->attr.name, t->lineno);
+          fprintf(listing, "Error: Symbol \"%s\" is redefined at line %d\n", t->attr.name, t->lineno);
         }
         st_insert(cur_scope,t->attr.name,t->type,t->lineno,cur_scope->location++,Var);
         break;
       case ParaK:
         if (t->attr.name != NULL){
           if (st_lookup_excluding_parent(cur_scope,t->attr.name) != NULL){
-            fprintf(listing, "Error: redeclared variable \"%s\" is called at line %d\n", t->attr.name, t->lineno);
+            fprintf(listing, "Error: Symbol \"%s\" is redefined at line %d\n", t->attr.name, t->lineno);
           }
-          
+          BucketList b = st_lookup(cur_scope, cur_scope->name);
+          Para p = (Para) malloc (sizeof(struct Para_t));
+          p->type = t->type;
+          p->next = NULL;
+          if (b->para == NULL){
+            b->para = p;
+          } else {
+            Para k = b->para;
+            while (k->next != NULL)
+            {
+            
+              k = k->next;
+            }
+            k->next = p;
+          }
           // printf("%s\n",cur_scope->name);
           st_insert(cur_scope,t->attr.name,t->type,t->lineno,cur_scope->location++,Var);
           // add_para(cur_scope,t->attr.name,t->type);
@@ -180,7 +194,7 @@ static void insertNode( TreeNode * t)
         break;
       case FuncK:
         if (st_lookup_excluding_parent(cur_scope,t->attr.name) != NULL){
-          fprintf(listing, "Error: redeclared function \"%s\" is called at line %d\n", t->attr.name, t->lineno);
+          fprintf(listing, "Error: Symbol \"%s\" is redefined at line %d\n", t->attr.name, t->lineno);
         }
         func_comp = 1;
         // if (t->type == INT)
@@ -222,6 +236,21 @@ void buildSymtab(TreeNode * syntaxTree)
   stack_push(s);
   st_insert(s,"input",Integer,0,s->location++,Func);
   st_insert(s,"output",Void,0,s->location++,Func);
+  BucketList b = st_lookup(s, "output");
+  Para p = (Para) malloc (sizeof(struct Para_t));
+  p->type = Integer;
+  p->next = NULL;
+  if (b->para == NULL){
+    b->para = p;
+  } else {
+    Para k = b->para;
+    while (k->next != NULL)
+    {
+    
+      k = k->next;
+    }
+    k->next = p;
+  }
   traverse(syntaxTree,insertNode,pop_scope);
   if (TraceAnalyze)
   { fprintf(listing,"\nSymbol table:\n\n");
@@ -262,6 +291,18 @@ int is_int(ScopeList scope, TreeNode *t){
     return 1;
   } else 
     return 0;
+}
+
+int check_para(Para p, TreeNode *c){
+  if (p == NULL && c == NULL)
+    return 1;
+  if (p == NULL || c == NULL)
+    return 0;
+  if (p->type == c->type){
+    return check_para(p->next,c->sibling);
+  } else {
+    return 0;
+  }
 }
 
 /* Procedure checkNode performs
@@ -321,7 +362,10 @@ static void checkNode(TreeNode * t)
             break;
           }
           t->type = b->type;
-          // fprintf(listing, "Error: Invalid function call at line %d (name : \"%s\")\n", t->lineno, t->attr.name);
+          Para f = b->para;
+          TreeNode *child = t->child[0];
+          if (!check_para(f,child))
+            fprintf(listing, "Error: Invalid function call at line %d (name : \"%s\")\n", t->lineno, t->attr.name);
           break;
         case AssignK:
           t->type = Integer;

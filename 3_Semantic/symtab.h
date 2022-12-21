@@ -39,7 +39,7 @@ typedef enum {Func,Var} SymbolKind;
 
 typedef struct Para_t
 {
-  ExpKind kind;
+  ExpKind type;
   struct Para_t *next;
 } * Para;
 
