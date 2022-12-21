@@ -109,7 +109,7 @@ BucketList st_lookup (ScopeList scope, char *name)
   }
   return st_lookup_excluding_parent(scope,name);
 }
-
+ 
 BucketList st_lookup_excluding_parent (ScopeList scope, char *name){
   int h = hash(name);
   BucketList l = scope->bucket[h];

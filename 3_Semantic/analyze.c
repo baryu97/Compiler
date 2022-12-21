@@ -172,6 +172,7 @@ static void insertNode( TreeNode * t)
           if (st_lookup_excluding_parent(cur_scope,t->attr.name) != NULL){
             fprintf(listing, "Error: redeclared variable \"%s\" is called at line %d\n", t->attr.name, t->lineno);
           }
+          
           // printf("%s\n",cur_scope->name);
           st_insert(cur_scope,t->attr.name,t->type,t->lineno,cur_scope->location++,Var);
           // add_para(cur_scope,t->attr.name,t->type);
@@ -315,10 +316,12 @@ static void checkNode(TreeNode * t)
         case CallK:
           b = st_lookup(cur_scope,t->attr.name);
           // printf("%s\n",cur_scope->name);
-          if (b == NULL || b->kind != Func)
+          if (b == NULL || b->kind != Func){
             fprintf(listing, "Error: undeclared function \"%s\" is called at line %d\n", t->attr.name, t->lineno);
-          // fprintf(listing, "Error: Invalid function call at line %d (name : \"%s\")\n", t->lineno, t->attr.name);
+            break;
+          }
           t->type = b->type;
+          // fprintf(listing, "Error: Invalid function call at line %d (name : \"%s\")\n", t->lineno, t->attr.name);
           break;
         case AssignK:
           t->type = Integer;

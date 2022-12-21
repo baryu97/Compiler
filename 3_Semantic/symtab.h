@@ -37,6 +37,13 @@ typedef struct LineListRec
 
 typedef enum {Func,Var} SymbolKind;
 
+typedef struct Para_t
+{
+  ExpKind kind;
+  struct Para_t *next;
+} * Para;
+
+
 typedef struct BucketListRec
    { char * name;
      ExpType type;
@@ -44,6 +51,7 @@ typedef struct BucketListRec
      LineList lines;
      int memloc ; /* memory location for variable */
      struct BucketListRec * next;
+     Para para;
    } * BucketList;
 
 typedef struct ScopeListRec
