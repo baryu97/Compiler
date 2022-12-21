@@ -74,6 +74,9 @@ typedef enum {Void,Integer,VoidArr,IntArr} ExpType;
 
 #define MAXCHILDREN 3
 
+struct ScopeListRec;
+typedef struct ScopeListRec * ScopeList;
+
 typedef struct treeNode
    { struct treeNode * child[MAXCHILDREN];
      struct treeNode * sibling;
@@ -84,6 +87,8 @@ typedef struct treeNode
              int val;
              char * name; } attr;
      ExpType type; /* for type checking of exps */
+    //  struct ScopeListRec * scope;
+    ScopeList scope;
    } TreeNode;
 
 /**************************************************/

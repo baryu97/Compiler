@@ -85,6 +85,7 @@ var_decl    : INT id SEMI
 num         : NUM 
               {
                 $$ = newExpNode(ConstK);
+                $$->type = Integer;
                 $$->attr.val = atoi(tokenString);
               }
             ;
@@ -272,6 +273,7 @@ simple_exp  : add_exp LT add_exp
                 $$->child[0] = $1;
                 $$->child[1] = $3;
                 $$->attr.op = LT;
+                $$->type = Integer;
               }
             | add_exp LE add_exp
               {
@@ -279,6 +281,7 @@ simple_exp  : add_exp LT add_exp
                 $$->child[0] = $1;
                 $$->child[1] = $3;
                 $$->attr.op = LE;
+                $$->type = Integer;
               }
             | add_exp GT add_exp
               {
@@ -286,6 +289,7 @@ simple_exp  : add_exp LT add_exp
                 $$->child[0] = $1;
                 $$->child[1] = $3;
                 $$->attr.op = GT;
+                $$->type = Integer;
               }
             | add_exp GE add_exp
               {
@@ -293,6 +297,7 @@ simple_exp  : add_exp LT add_exp
                 $$->child[0] = $1;
                 $$->child[1] = $3;
                 $$->attr.op = GE;
+                $$->type = Integer;
               }
             | add_exp EQ add_exp
               {
@@ -300,6 +305,7 @@ simple_exp  : add_exp LT add_exp
                 $$->child[0] = $1;
                 $$->child[1] = $3;
                 $$->attr.op = EQ;
+                $$->type = Integer;
               }
             | add_exp NE add_exp
               {
@@ -307,6 +313,7 @@ simple_exp  : add_exp LT add_exp
                 $$->child[0] = $1;
                 $$->child[1] = $3;
                 $$->attr.op = NE;
+                $$->type = Integer;
               }
             | add_exp
             ; 
@@ -325,6 +332,7 @@ add_exp     : add_exp PLUS term
                 $$->child[0] = $1;
                 $$->child[1] = $3;
                 $$->attr.op = PLUS; 
+                $$->type = Integer;
               }
             | add_exp MINUS term 
               {
@@ -332,6 +340,7 @@ add_exp     : add_exp PLUS term
                 $$->child[0] = $1;
                 $$->child[1] = $3;
                 $$->attr.op = MINUS; 
+                $$->type = Integer;
               }
             | term
             ;
@@ -346,6 +355,7 @@ term        : term TIMES factor
                 $$->child[0] = $1;
                 $$->child[1] = $3;
                 $$->attr.op = TIMES; 
+                $$->type = Integer;
               }
             | term OVER factor 
               {
@@ -353,6 +363,7 @@ term        : term TIMES factor
                 $$->child[0] = $1;
                 $$->child[1] = $3;
                 $$->attr.op = OVER; 
+                $$->type = Integer;
               }
             | factor
             ;
